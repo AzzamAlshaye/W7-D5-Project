@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router";
-import { FiSend } from "react-icons/fi";
+import {
+  FiSend,
+  FiMoreVertical,
+  FiChevronDown,
+  FiChevronRight,
+} from "react-icons/fi";
 
 // Endpoints
 const USERS_API = "https://683878942c55e01d184d6bf0.mockapi.io/auth";
@@ -19,25 +24,28 @@ export default function ChatPage() {
   }, [isAuth, userId, navigate]);
 
   // --- State ---
-  const [allUsers, setAllUsers] = useState([]); // all other users
+  const [allUsers, setAllUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [entries, setEntries] = useState([]); // both requests and chats
+  const [entries, setEntries] = useState([]);
   const [draft, setDraft] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [allContactsOpen, setAllContactsOpen] = useState(false);
+  const [showLogoutMenu, setShowLogoutMenu] = useState(false);
   const listRef = useRef(null);
 
-  // --- Load all users except self ---
+  // --- Fetch users ---
   useEffect(() => {
     axios
       .get(USERS_API)
       .then((res) => {
         const others = res.data.filter((u) => u.id !== userId);
         setAllUsers(others);
-        if (others.length && !selectedUser) setSelectedUser(others[0]);
+        if (!selectedUser && others.length) setSelectedUser(others[0]);
       })
       .catch(console.error);
   }, [userId]);
 
-  // --- Load all message entries ---
+  // --- Fetch entries ---
   const fetchEntries = () => {
     axios
       .get(MESSAGES_API)
@@ -56,7 +64,7 @@ export default function ChatPage() {
     (e) => e.type === "chat" && e.status === "accepted"
   );
 
-  // --- Determine status for selected user ---
+  // --- Status for selected user ---
   const currentRequest = requests.find(
     (r) =>
       (r.fromId === userId && r.toId === selectedUser?.id) ||
@@ -64,7 +72,7 @@ export default function ChatPage() {
   );
   const status = currentRequest?.status;
 
-  // --- Compute accepted and available lists ---
+  // --- Compute contacts lists ---
   const acceptedIds = requests
     .filter(
       (r) =>
@@ -75,7 +83,7 @@ export default function ChatPage() {
   const acceptedContacts = allUsers.filter((u) => acceptedIds.includes(u.id));
   const availableContacts = allUsers.filter((u) => !acceptedIds.includes(u.id));
 
-  // --- Conversation messages if accepted ---
+  // --- Conversation if accepted ---
   const convo = chats
     .filter(
       (m) =>
@@ -145,69 +153,107 @@ export default function ChatPage() {
   return (
     <div className="h-screen flex">
       {/* Sidebar */}
-      <aside className="w-1/4 bg-gray-800 text-white p-4 overflow-y-auto">
-        <section>
-          <h3 className="font-semibold mb-2">Contacts</h3>
-          <ul className="mb-6">
-            {acceptedContacts.map((u) => (
-              <li key={u.id}>
-                <button
-                  onClick={() => setSelectedUser(u)}
-                  className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
-                    selectedUser?.id === u.id
-                      ? "bg-gray-700"
-                      : "hover:bg-gray-700"
-                  }`}
-                >
-                  {u.fullName}
-                </button>
-              </li>
-            ))}
-            {acceptedContacts.length === 0 && (
-              <li className="text-sm text-gray-400">No contacts yet.</li>
-            )}
-          </ul>
-        </section>
+      {sidebarOpen && (
+        <aside className="lg:w-1/4 w-full bg-gray-800 text-white p-4 relative">
+          <section>
+            <div className="p-2 mb-2 rounded bg-[#1c2838]">
+              <h3 className="font-semibold">Contacts</h3>
+            </div>
+            <ul className="mb-6">
+              {acceptedContacts.map((u) => (
+                <li key={u.id}>
+                  <button
+                    onClick={() => setSelectedUser(u)}
+                    className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
+                      selectedUser?.id === u.id
+                        ? "bg-gray-700"
+                        : "hover:bg-gray-700"
+                    }`}
+                  >
+                    {u.fullName}
+                  </button>
+                </li>
+              ))}
+              {!acceptedContacts.length && (
+                <li className="text-sm text-gray-400">No contacts yet.</li>
+              )}
+            </ul>
 
-        <section>
-          <h3 className="font-semibold mb-2">All Contacts</h3>
-          <ul>
-            {availableContacts.map((u) => (
-              <li key={u.id}>
+            {/* All Contacts collapsible */}
+            <div
+              className="p-2 mb-2 rounded cursor-pointer flex justify-between items-center bg-gray-700"
+              onClick={() => setAllContactsOpen(!allContactsOpen)}
+            >
+              <span className="font-semibold">All Contacts</span>
+              {allContactsOpen ? <FiChevronDown /> : <FiChevronRight />}
+            </div>
+            {allContactsOpen && (
+              <ul className="mb-6">
+                {availableContacts.map((u) => (
+                  <li key={u.id}>
+                    <button
+                      onClick={() => setSelectedUser(u)}
+                      className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
+                        selectedUser?.id === u.id
+                          ? "bg-gray-700"
+                          : "hover:bg-gray-700"
+                      }`}
+                    >
+                      {u.fullName}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* Logout menu */}
+            <div className="absolute bottom-4 left-4">
+              <button onClick={() => setShowLogoutMenu(!showLogoutMenu)}>
+                <FiMoreVertical size={24} />
+              </button>
+              {showLogoutMenu && (
                 <button
-                  onClick={() => setSelectedUser(u)}
-                  className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
-                    selectedUser?.id === u.id
-                      ? "bg-gray-700"
-                      : "hover:bg-gray-700"
-                  }`}
+                  onClick={() => {
+                    localStorage.clear();
+                    navigate("/login");
+                  }}
+                  className="mt-2 text-sm text-white bg-red-600 px-2 py-1 rounded hover:bg-red-700"
                 >
-                  {u.fullName}
+                  Logout
                 </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </aside>
+              )}
+            </div>
+
+            {/* Sidebar toggler at bottom */}
+            <button
+              className="absolute bottom-4 right-4 text-sm text-white bg-gray-700 p-1 rounded hover:bg-gray-600"
+              onClick={() => setSidebarOpen(false)}
+            >
+              Close
+            </button>
+          </section>
+        </aside>
+      )}
 
       {/* Chat area */}
       <div
-        className="flex-1 flex flex-col bg-cover bg-center"
+        className={`flex-1 flex flex-col bg-cover bg-center transition-all ${
+          sidebarOpen ? "" : "ml-0"
+        }`}
         style={{
           backgroundImage: `url('https://images.unsplash.com/photo-1525186402429-7ee27cd56906?auto=format&fit=crop&w=1350&q=80')`,
         }}
       >
-        {/* Header */}
+        {/* Header with toggler */}
         <header className="flex items-center p-4 bg-black bg-opacity-50 text-white">
-          <button
-            onClick={() => {
-              localStorage.clear();
-              navigate("/login");
-            }}
-            className="mr-4 text-lg"
-          >
-            ← Logout
-          </button>
+          {!sidebarOpen && (
+            <button
+              className="mr-4 p-2 bg-gray-800 text-white rounded hover:bg-gray-700"
+              onClick={() => setSidebarOpen(true)}
+            >
+              Open
+            </button>
+          )}
           <h2 className="text-lg font-medium">
             {selectedUser?.fullName || "Select a contact"}
           </h2>
@@ -231,33 +277,30 @@ export default function ChatPage() {
                   Send Chat Request
                 </button>
               )}
-              {status === "pending" && (
-                <>
-                  {currentRequest.fromId === userId ? (
+              {status === "pending" &&
+                (currentRequest.fromId === userId ? (
+                  <button
+                    onClick={cancelRequest}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                  >
+                    Cancel Request
+                  </button>
+                ) : (
+                  <div className="space-x-2">
+                    <button
+                      onClick={acceptRequest}
+                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                    >
+                      Accept
+                    </button>
                     <button
                       onClick={cancelRequest}
                       className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
                     >
-                      Cancel Request
+                      Decline
                     </button>
-                  ) : (
-                    <div className="space-x-2">
-                      <button
-                        onClick={acceptRequest}
-                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                      >
-                        Accept
-                      </button>
-                      <button
-                        onClick={cancelRequest}
-                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                      >
-                        Decline
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
+                  </div>
+                ))}
             </div>
           )}
 
