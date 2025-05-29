@@ -13,30 +13,31 @@ export default function ChatPage() {
   // --- Auth guard ---
   const isAuth = localStorage.getItem("isAuthenticated") === "true";
   const userId = localStorage.getItem("userId");
+  const currentUserName = localStorage.getItem("fullName") || "";
   useEffect(() => {
     if (!isAuth || !userId) navigate("/login");
   }, [isAuth, userId, navigate]);
 
   // --- State ---
-  const [contacts, setContacts] = useState([]);
+  const [allUsers, setAllUsers] = useState([]); // all other users
   const [selectedUser, setSelectedUser] = useState(null);
   const [entries, setEntries] = useState([]); // both requests and chats
   const [draft, setDraft] = useState("");
   const listRef = useRef(null);
 
-  // --- Load contacts (exclude self) ---
+  // --- Load all users except self ---
   useEffect(() => {
     axios
       .get(USERS_API)
       .then((res) => {
         const others = res.data.filter((u) => u.id !== userId);
-        setContacts(others);
-        if (others.length) setSelectedUser(others[0]);
+        setAllUsers(others);
+        if (others.length && !selectedUser) setSelectedUser(others[0]);
       })
       .catch(console.error);
   }, [userId]);
 
-  // --- Load all entries ---
+  // --- Load all message entries ---
   const fetchEntries = () => {
     axios
       .get(MESSAGES_API)
@@ -49,21 +50,32 @@ export default function ChatPage() {
     return () => clearInterval(id);
   }, []);
 
-  // --- Separate requests and accepted chats ---
+  // --- Separate requests and chats ---
   const requests = entries.filter((e) => e.type === "request");
   const chats = entries.filter(
     (e) => e.type === "chat" && e.status === "accepted"
   );
 
-  // --- Determine current request status ---
+  // --- Determine status for selected user ---
   const currentRequest = requests.find(
     (r) =>
       (r.fromId === userId && r.toId === selectedUser?.id) ||
       (r.fromId === selectedUser?.id && r.toId === userId)
   );
-  const status = currentRequest?.status; // undefined | 'pending' | 'accepted'
+  const status = currentRequest?.status;
 
-  // --- Filter conversation based on accepted chats ---
+  // --- Compute accepted and available lists ---
+  const acceptedIds = requests
+    .filter(
+      (r) =>
+        r.status === "accepted" && (r.fromId === userId || r.toId === userId)
+    )
+    .map((r) => (r.fromId === userId ? r.toId : r.fromId));
+
+  const acceptedContacts = allUsers.filter((u) => acceptedIds.includes(u.id));
+  const availableContacts = allUsers.filter((u) => !acceptedIds.includes(u.id));
+
+  // --- Conversation messages if accepted ---
   const convo = chats
     .filter(
       (m) =>
@@ -72,7 +84,7 @@ export default function ChatPage() {
     )
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-  // --- Send chat request ---
+  // --- Actions ---
   const sendRequest = () => {
     if (!selectedUser) return;
     axios
@@ -87,7 +99,6 @@ export default function ChatPage() {
       .catch(console.error);
   };
 
-  // --- Accept chat request ---
   const acceptRequest = () => {
     if (!currentRequest) return;
     axios
@@ -99,7 +110,14 @@ export default function ChatPage() {
       .catch(console.error);
   };
 
-  // --- Send chat message ---
+  const cancelRequest = () => {
+    if (!currentRequest) return;
+    axios
+      .delete(`${MESSAGES_API}/${currentRequest.id}`)
+      .then(fetchEntries)
+      .catch(console.error);
+  };
+
   const sendMessage = () => {
     if (!draft.trim() || status !== "accepted") return;
     axios
@@ -118,34 +136,58 @@ export default function ChatPage() {
       .catch(console.error);
   };
 
-  // --- Auto-scroll on new messages ---
+  // --- Auto scroll ---
   useEffect(() => {
-    if (listRef.current) {
+    if (listRef.current)
       listRef.current.scrollTop = listRef.current.scrollHeight;
-    }
   }, [convo]);
 
   return (
     <div className="h-screen flex">
-      {/* Contacts sidebar */}
+      {/* Sidebar */}
       <aside className="w-1/4 bg-gray-800 text-white p-4 overflow-y-auto">
-        <h3 className="font-semibold mb-4">Contacts</h3>
-        <ul>
-          {contacts.map((u) => (
-            <li key={u.id}>
-              <button
-                onClick={() => setSelectedUser(u)}
-                className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
-                  selectedUser?.id === u.id
-                    ? "bg-gray-700"
-                    : "hover:bg-gray-700"
-                }`}
-              >
-                {u.fullName}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <section>
+          <h3 className="font-semibold mb-2">Contacts</h3>
+          <ul className="mb-6">
+            {acceptedContacts.map((u) => (
+              <li key={u.id}>
+                <button
+                  onClick={() => setSelectedUser(u)}
+                  className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
+                    selectedUser?.id === u.id
+                      ? "bg-gray-700"
+                      : "hover:bg-gray-700"
+                  }`}
+                >
+                  {u.fullName}
+                </button>
+              </li>
+            ))}
+            {acceptedContacts.length === 0 && (
+              <li className="text-sm text-gray-400">No contacts yet.</li>
+            )}
+          </ul>
+        </section>
+
+        <section>
+          <h3 className="font-semibold mb-2">All Contacts</h3>
+          <ul>
+            {availableContacts.map((u) => (
+              <li key={u.id}>
+                <button
+                  onClick={() => setSelectedUser(u)}
+                  className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
+                    selectedUser?.id === u.id
+                      ? "bg-gray-700"
+                      : "hover:bg-gray-700"
+                  }`}
+                >
+                  {u.fullName}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       </aside>
 
       {/* Chat area */}
@@ -179,9 +221,8 @@ export default function ChatPage() {
             </p>
           )}
 
-          {/* Request flow */}
           {selectedUser && status !== "accepted" && (
-            <div className="mt-10 text-center">
+            <div className="mt-10 text-center space-y-2">
               {status === undefined && (
                 <button
                   onClick={sendRequest}
@@ -190,34 +231,58 @@ export default function ChatPage() {
                   Send Chat Request
                 </button>
               )}
-              {status === "pending" && currentRequest.fromId === userId && (
-                <p className="text-yellow-300">Request pending…</p>
-              )}
-              {status === "pending" && currentRequest.toId === userId && (
-                <button
-                  onClick={acceptRequest}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                >
-                  Accept Request
-                </button>
+              {status === "pending" && (
+                <>
+                  {currentRequest.fromId === userId ? (
+                    <button
+                      onClick={cancelRequest}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                    >
+                      Cancel Request
+                    </button>
+                  ) : (
+                    <div className="space-x-2">
+                      <button
+                        onClick={acceptRequest}
+                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={cancelRequest}
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
 
-          {/* Chat messages */}
           {status === "accepted" &&
             convo.map((msg) => {
               const mine = msg.fromId === userId;
               return (
                 <div
                   key={msg.id}
-                  className={`max-w-[70%] px-4 py-2 my-1 rounded-lg break-words ${
-                    mine
-                      ? "ml-auto bg-green-400 text-white"
-                      : "mr-auto bg-gray-700 text-gray-100"
+                  className={`flex flex-col ${
+                    mine ? "items-end" : "items-start"
                   }`}
                 >
-                  {msg.text}
+                  <span className="text-xs font-semibold text-gray-300 mb-1">
+                    {mine ? currentUserName : selectedUser.fullName}
+                  </span>
+                  <div
+                    className={`max-w-[70%] px-4 py-2 mb-4 rounded-lg break-words ${
+                      mine
+                        ? "bg-green-400 text-white"
+                        : "bg-gray-700 text-gray-100"
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
                 </div>
               );
             })}
