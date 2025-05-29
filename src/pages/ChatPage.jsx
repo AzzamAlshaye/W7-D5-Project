@@ -6,6 +6,8 @@ import {
   FiMoreVertical,
   FiChevronDown,
   FiChevronRight,
+  FiMenu,
+  FiX,
 } from "react-icons/fi";
 
 // Endpoints
@@ -153,107 +155,111 @@ export default function ChatPage() {
   return (
     <div className="h-screen flex">
       {/* Sidebar */}
-      {sidebarOpen && (
-        <aside className="lg:w-1/4 w-full bg-gray-800 text-white p-4 relative">
-          <section>
-            <div className="p-2 mb-2 rounded bg-[#1c2838]">
-              <h3 className="font-semibold">Contacts</h3>
-            </div>
-            <ul className="mb-6">
-              {acceptedContacts.map((u) => (
-                <li key={u.id}>
-                  <button
-                    onClick={() => setSelectedUser(u)}
-                    className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
-                      selectedUser?.id === u.id
-                        ? "bg-gray-700"
-                        : "hover:bg-gray-700"
-                    }`}
-                  >
-                    {u.fullName}
-                  </button>
-                </li>
-              ))}
-              {!acceptedContacts.length && (
-                <li className="text-sm text-gray-400">No contacts yet.</li>
-              )}
-            </ul>
+      <aside
+        className={`bg-gray-800 text-white p-4 overflow-y-auto z-20 transition-transform transform ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } fixed inset-y-0 left-0 w-full lg:relative lg:w-1/4 lg:translate-x-0`}
+      >
+        {/* Close button for mobile */}
+        <div className="lg:hidden flex justify-end">
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="p-2 text-white"
+          >
+            <FiX size={24} />
+          </button>
+        </div>
 
-            {/* All Contacts collapsible */}
-            <div
-              className="p-2 mb-2 rounded cursor-pointer flex justify-between items-center bg-gray-700"
-              onClick={() => setAllContactsOpen(!allContactsOpen)}
-            >
-              <span className="font-semibold">All Contacts</span>
-              {allContactsOpen ? <FiChevronDown /> : <FiChevronRight />}
-            </div>
-            {allContactsOpen && (
-              <ul className="mb-6">
-                {availableContacts.map((u) => (
-                  <li key={u.id}>
-                    <button
-                      onClick={() => setSelectedUser(u)}
-                      className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
-                        selectedUser?.id === u.id
-                          ? "bg-gray-700"
-                          : "hover:bg-gray-700"
-                      }`}
-                    >
-                      {u.fullName}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+        {/* Contacts header */}
+        <div className="p-2 mb-2 rounded bg-[#1c2838]">
+          <h3 className="font-semibold">Contacts</h3>
+        </div>
 
-            {/* Logout menu */}
-            <div className="absolute bottom-4 left-4">
-              <button onClick={() => setShowLogoutMenu(!showLogoutMenu)}>
-                <FiMoreVertical size={24} />
+        {/* Accepted contacts */}
+        <ul className="mb-6">
+          {acceptedContacts.map((u) => (
+            <li key={u.id}>
+              <button
+                onClick={() => setSelectedUser(u)}
+                className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
+                  selectedUser?.id === u.id
+                    ? "bg-gray-700"
+                    : "hover:bg-gray-700"
+                }`}
+              >
+                {u.fullName}
               </button>
-              {showLogoutMenu && (
-                <button
-                  onClick={() => {
-                    localStorage.clear();
-                    navigate("/login");
-                  }}
-                  className="mt-2 text-sm text-white bg-red-600 px-2 py-1 rounded hover:bg-red-700"
-                >
-                  Logout
-                </button>
-              )}
-            </div>
+            </li>
+          ))}
+          {!acceptedContacts.length && (
+            <li className="text-sm text-gray-400">No contacts yet.</li>
+          )}
+        </ul>
 
-            {/* Sidebar toggler at bottom */}
+        {/* All contacts collapsible */}
+        <div
+          className="p-2 mb-2 rounded cursor-pointer flex justify-between items-center bg-gray-700"
+          onClick={() => setAllContactsOpen(!allContactsOpen)}
+        >
+          <span className="font-semibold">All Contacts</span>
+          {allContactsOpen ? <FiChevronDown /> : <FiChevronRight />}
+        </div>
+        {allContactsOpen && (
+          <ul className="mb-6">
+            {availableContacts.map((u) => (
+              <li key={u.id}>
+                <button
+                  onClick={() => setSelectedUser(u)}
+                  className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
+                    selectedUser?.id === u.id
+                      ? "bg-gray-700"
+                      : "hover:bg-gray-700"
+                  }`}
+                >
+                  {u.fullName}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Logout under menu */}
+        <div className="absolute bottom-4 left-4">
+          <button onClick={() => setShowLogoutMenu(!showLogoutMenu)}>
+            <FiMoreVertical size={24} />
+          </button>
+          {showLogoutMenu && (
             <button
-              className="absolute bottom-4 right-4 text-sm text-white bg-gray-700 p-1 rounded hover:bg-gray-600"
-              onClick={() => setSidebarOpen(false)}
+              onClick={() => {
+                localStorage.clear();
+                navigate("/login");
+              }}
+              className="mt-2 text-sm text-white bg-red-600 px-2 py-1 rounded hover:bg-red-700"
             >
-              Close
+              Logout
             </button>
-          </section>
-        </aside>
-      )}
+          )}
+        </div>
+      </aside>
 
       {/* Chat area */}
       <div
-        className={`flex-1 flex flex-col bg-cover bg-center transition-all ${
-          sidebarOpen ? "" : "ml-0"
-        }`}
+        className="flex-1 flex flex-col bg-cover bg-center ml-0 lg:ml-1/4"
         style={{
           backgroundImage: `url('https://images.unsplash.com/photo-1525186402429-7ee27cd56906?auto=format&fit=crop&w=1350&q=80')`,
         }}
       >
-        {/* Header with toggler */}
+        {/* Header */}
         <header className="flex items-center p-4 bg-black bg-opacity-50 text-white">
-          {!sidebarOpen && (
+          {/* Open button for mobile */}
+          <div className="lg:hidden mr-2">
             <button
-              className="mr-4 p-2 bg-gray-800 text-white rounded hover:bg-gray-700"
               onClick={() => setSidebarOpen(true)}
+              className="p-2 text-white"
             >
-              Open
+              <FiMenu size={24} />
             </button>
-          )}
+          </div>
           <h2 className="text-lg font-medium">
             {selectedUser?.fullName || "Select a contact"}
           </h2>
