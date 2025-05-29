@@ -26,7 +26,7 @@ export default function LoginPage() {
     try {
       const resp = await axios.get(
         "https://683878942c55e01d184d6bf0.mockapi.io/auth",
-        { params: { id: values.id } }
+        { params: { email: values.email } }
       );
       const users = resp.data;
       if (users.length === 0) {

@@ -1,21 +1,16 @@
-// src/routes/Router.jsx
-import React from "react";
+// src/router/Router.jsx
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router";
-import Nav from "../components/Navbar";
-import Footer from "../components/Footer";
-import Home from "../pages/HomePage";
-import CharactersList from "../pages/CharactersList";
+// import AppLayout from "../layouts/AppLayout";
+import HomePage from "../pages/HomePage";
 import LoginPage from "../pages/LoginPage";
 import Register from "../pages/Register";
-import UserProfile from "../pages/UserProfile";
-import Chatting from "../pages/Chatting";
+import ChatPage from "../pages/ChatPage";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 function RootLayout() {
   return (
     <>
-      <Nav />
       <Outlet />
-      <Footer />
     </>
   );
 }
@@ -25,17 +20,17 @@ const router = createBrowserRouter([
     path: "/",
     element: <RootLayout />,
     children: [
-      { index: true, element: <Home /> },
-      { path: "characters", element: <CharactersList /> },
-      { path: "profile", element: <UserProfile /> },
-      // …any other public pages that need Nav/Footer
+      { index: true, element: <HomePage /> },
+      { path: "login", element: <LoginPage /> },
+      { path: "register", element: <Register /> },
+
+      // everything under here requires login
+      {
+        element: <ProtectedRoute />,
+        children: [{ path: "chat", element: <ChatPage /> }],
+      },
     ],
   },
-
-  // standalone auth pages (no RootLayout)
-  { path: "login", element: <LoginPage /> },
-  { path: "register", element: <Register /> },
-  { path: "chatting", element: <Chatting /> },
 ]);
 
 export default function AppRouter() {
