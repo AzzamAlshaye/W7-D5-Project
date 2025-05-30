@@ -1,37 +1,57 @@
 import React from "react";
 import { Link } from "react-router";
 
-export default function HomePage() {
+export default function HomeScreen() {
+  const isAuth = localStorage.getItem("isAuthenticated") === "true";
+
   return (
-    <main className="min-h-screen bg-teal-50 flex flex-col">
-      {/* Hero Section */}
-      <section className="relative flex-1 bg-teal-50 text-teal-800 flex flex-col items-center justify-center px-6 lg:px-80 py-12">
-        {/* Faded background logo */}
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-tr from-purple-600 via-pink-500 to-red-400 flex items-center justify-center px-6">
+      {/* Decorative blobs */}
+      <div className="absolute top-[-10%] left-[-10%] w-72 h-72 bg-white opacity-10 rounded-full animate-pulse"></div>
+      <div className="absolute bottom-[-15%] right-[-15%] w-96 h-96 bg-white opacity-10 rounded-full animate-spin-slow"></div>
+      <div className="absolute top-1/2 right-20 w-56 h-56 bg-white opacity-5 rounded-full"></div>
+
+      {/* Hero Content */}
+      <div className="relative z-10 text-center max-w-lg">
         <img
-          src="logo-theme.svg"
-          alt="Logo background"
-          className="absolute inset-0 m-auto w-2/3 h-2/3 object-contain opacity-10 pointer-events-none"
+          src="logo.png"
+          alt="Logo"
+          className="mx-auto mb-6 w-24 h-24 sm:w-32 sm:h-32 bg-[#ffffff7c] rounded-3xl"
         />
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white drop-shadow-lg">
+          Welcome to ChatSphere
+        </h1>
+        <p className="mt-4 text-white/90 text-base sm:text-lg md:text-xl">
+          Dive into seamless, real-time conversations. Connect, share, and chat
+          with friends in a beautiful, intuitive interface.
+        </p>
 
-        {/* Foreground content */}
-        <div className="relative z-10 flex flex-col items-center space-y-6 text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight">
-            Welcome to the Characters API
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg max-w-2xl text-teal-800">
-            Explore detailed profiles of your favorite TV characters—including
-            names, images, and gender—all in one place.
-          </p>
-          <Link
-            to="/characters"
-            className="inline-block mt-4 bg-teal-600 text-teal-100 font-semibold py-3 px-8 rounded-full shadow-lg transform transition duration-200 hover:scale-105 hover:bg-teal-50 hover:text-teal-700"
-          >
-            Check Characters
-          </Link>
+        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+          {isAuth ? (
+            <Link
+              to="/chat"
+              className="inline-block px-8 py-3 bg-white text-purple-600 font-semibold rounded-full shadow-lg transform transition hover:scale-105"
+            >
+              Continue Chatting
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/register"
+                className="inline-block px-8 py-3 bg-white text-purple-600 font-semibold rounded-full shadow-lg transform transition hover:scale-105"
+              >
+                Get Started
+              </Link>
+              <Link
+                to="/login"
+                className="inline-block px-8 py-3 border-2 border-white text-white font-semibold rounded-full transform transition hover:bg-white hover:text-purple-600"
+              >
+                Login
+              </Link>
+            </>
+          )}
         </div>
-      </section>
-
-      {/* Footer CTA or additional section can go here */}
-    </main>
+      </div>
+    </div>
   );
 }

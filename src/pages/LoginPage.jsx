@@ -39,8 +39,8 @@ export default function LoginPage() {
           localStorage.setItem("email", user.email);
           localStorage.setItem("userId", user.id);
 
-          toast.success("Login successful! Redirecting to home…");
-          setTimeout(() => navigate("/chat"), 3000);
+          toast.success("Login successful! Redirecting…");
+          setTimeout(() => navigate("/chat"), 2000);
         } else {
           toast.error("Incorrect password");
         }
@@ -54,15 +54,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-teal-50 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-purple-600 via-pink-500 to-red-400 p-6">
       <ToastContainer position="top-center" />
+
       <div className="bg-white shadow-2xl rounded-3xl max-w-md w-full p-8">
         <img
-          src="logo-theme.svg"
+          src="logo.png"
           alt="Logo"
           className="h-30 w-full object-contain mb-6"
         />
-        <h2 className="text-3xl font-bold text-teal-600 mb-6 text-center">
+        <h2 className="text-3xl font-bold text-purple-600 mb-6 text-center">
           Log In
         </h2>
 
@@ -76,7 +77,7 @@ export default function LoginPage() {
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-teal-700 font-medium mb-1"
+                  className="block text-purple-700 font-medium mb-1"
                 >
                   Email Address
                 </label>
@@ -84,7 +85,7 @@ export default function LoginPage() {
                   type="email"
                   id="email"
                   name="email"
-                  className="w-full px-4 py-2 border border-teal-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
                 />
                 <ErrorMessage
                   name="email"
@@ -96,7 +97,7 @@ export default function LoginPage() {
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-teal-700 font-medium mb-1"
+                  className="block text-purple-700 font-medium mb-1"
                 >
                   Password
                 </label>
@@ -104,7 +105,7 @@ export default function LoginPage() {
                   type="password"
                   id="password"
                   name="password"
-                  className="w-full px-4 py-2 border border-teal-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
                 />
                 <ErrorMessage
                   name="password"
@@ -116,13 +117,13 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition disabled:opacity-50"
+                className="w-full py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
               >
                 {isSubmitting ? "Logging In..." : "Log In"}
               </button>
 
               <Link to="/">
-                <button className="w-full py-2 bg-teal-200 text-teal-700 font-semibold rounded-lg hover:bg-teal-300 transition">
+                <button className="w-full py-2 bg-pink-200 text-pink-700 font-semibold rounded-lg hover:bg-pink-300 transition">
                   Home
                 </button>
               </Link>
@@ -130,11 +131,11 @@ export default function LoginPage() {
           )}
         </Formik>
 
-        <p className="mt-6 text-center text-teal-700">
+        <p className="mt-6 text-center text-purple-700">
           Don’t have an account?
           <Link
             to="/register"
-            className="text-teal-600 font-medium hover:underline ml-1"
+            className="text-purple-600 font-medium hover:underline ml-1"
           >
             Register
           </Link>
