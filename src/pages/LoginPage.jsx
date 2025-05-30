@@ -40,7 +40,7 @@ export default function LoginPage() {
           localStorage.setItem("userId", user.id);
 
           toast.success("Login successful! Redirecting to home…");
-          setTimeout(() => navigate("/"), 3000);
+          setTimeout(() => navigate("/chat"), 3000);
         } else {
           toast.error("Incorrect password");
         }
