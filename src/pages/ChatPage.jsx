@@ -8,6 +8,8 @@ import {
   FiChevronRight,
   FiMenu,
   FiX,
+  FiClock,
+  FiBell,
 } from "react-icons/fi";
 
 // Endpoints
@@ -17,7 +19,7 @@ const MESSAGES_API = "https://683878942c55e01d184d6bf0.mockapi.io/messages";
 export default function ChatPage() {
   const navigate = useNavigate();
 
-  // --- Auth guard ---
+  // Auth guard
   const isAuth = localStorage.getItem("isAuthenticated") === "true";
   const userId = localStorage.getItem("userId");
   const currentUserName = localStorage.getItem("fullName") || "";
@@ -25,17 +27,17 @@ export default function ChatPage() {
     if (!isAuth || !userId) navigate("/login");
   }, [isAuth, userId, navigate]);
 
-  // --- State ---
+  // State
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [entries, setEntries] = useState([]);
   const [draft, setDraft] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [allContactsOpen, setAllContactsOpen] = useState(false);
+  const [allUsersOpen, setAllUsersOpen] = useState(false);
   const [showLogoutMenu, setShowLogoutMenu] = useState(false);
   const listRef = useRef(null);
 
-  // --- Fetch users ---
+  // Fetch users
   useEffect(() => {
     axios
       .get(USERS_API)
@@ -47,7 +49,7 @@ export default function ChatPage() {
       .catch(console.error);
   }, [userId]);
 
-  // --- Fetch entries ---
+  // Fetch entries
   const fetchEntries = () => {
     axios
       .get(MESSAGES_API)
@@ -60,13 +62,13 @@ export default function ChatPage() {
     return () => clearInterval(id);
   }, []);
 
-  // --- Separate requests and chats ---
+  // Separate requests and chats
   const requests = entries.filter((e) => e.type === "request");
   const chats = entries.filter(
     (e) => e.type === "chat" && e.status === "accepted"
   );
 
-  // --- Status for selected user ---
+  // Determine status for selected user
   const currentRequest = requests.find(
     (r) =>
       (r.fromId === userId && r.toId === selectedUser?.id) ||
@@ -74,7 +76,7 @@ export default function ChatPage() {
   );
   const status = currentRequest?.status;
 
-  // --- Compute contacts lists ---
+  // Compute contacts lists
   const acceptedIds = requests
     .filter(
       (r) =>
@@ -85,7 +87,7 @@ export default function ChatPage() {
   const acceptedContacts = allUsers.filter((u) => acceptedIds.includes(u.id));
   const availableContacts = allUsers.filter((u) => !acceptedIds.includes(u.id));
 
-  // --- Conversation if accepted ---
+  // Conversation if accepted
   const convo = chats
     .filter(
       (m) =>
@@ -94,7 +96,7 @@ export default function ChatPage() {
     )
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-  // --- Actions ---
+  // Actions
   const sendRequest = () => {
     if (!selectedUser) return;
     axios
@@ -108,7 +110,6 @@ export default function ChatPage() {
       .then(fetchEntries)
       .catch(console.error);
   };
-
   const acceptRequest = () => {
     if (!currentRequest) return;
     axios
@@ -119,7 +120,6 @@ export default function ChatPage() {
       .then(fetchEntries)
       .catch(console.error);
   };
-
   const cancelRequest = () => {
     if (!currentRequest) return;
     axios
@@ -127,7 +127,6 @@ export default function ChatPage() {
       .then(fetchEntries)
       .catch(console.error);
   };
-
   const sendMessage = () => {
     if (!draft.trim() || status !== "accepted") return;
     axios
@@ -146,21 +145,21 @@ export default function ChatPage() {
       .catch(console.error);
   };
 
-  // --- Auto scroll ---
+  // Auto scroll
   useEffect(() => {
     if (listRef.current)
       listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [convo]);
 
   return (
-    <div className="h-screen flex">
+    <div className="h-screen flex ">
       {/* Sidebar */}
       <aside
-        className={`bg-gray-800 text-white p-4 overflow-y-auto z-20 transition-transform transform ${
+        className={`bg-gray-800 text-white p-4 overflow-y-auto z-20 transform transition-transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } fixed inset-y-0 left-0 w-full lg:relative lg:w-1/4 lg:translate-x-0`}
+        } fixed inset-y-0 left-0 w-full h-full lg:relative lg:w-1/4 lg:h-auto`}
       >
-        {/* Close button for mobile */}
+        {/* Close mobile */}
         <div className="lg:hidden flex justify-end">
           <button
             onClick={() => setSidebarOpen(false)}
@@ -169,48 +168,26 @@ export default function ChatPage() {
             <FiX size={24} />
           </button>
         </div>
-
         {/* Contacts header */}
         <div className="p-2 mb-2 rounded bg-[#1c2838]">
           <h3 className="font-semibold">Contacts</h3>
         </div>
-
         {/* Accepted contacts */}
         <ul className="mb-6">
-          {acceptedContacts.map((u) => (
-            <li key={u.id}>
-              <button
-                onClick={() => setSelectedUser(u)}
-                className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
-                  selectedUser?.id === u.id
-                    ? "bg-gray-700"
-                    : "hover:bg-gray-700"
-                }`}
-              >
-                {u.fullName}
-              </button>
-            </li>
-          ))}
-          {!acceptedContacts.length && (
-            <li className="text-sm text-gray-400">No contacts yet.</li>
-          )}
-        </ul>
-
-        {/* All contacts collapsible */}
-        <div
-          className="p-2 mb-2 rounded cursor-pointer flex justify-between items-center bg-gray-700"
-          onClick={() => setAllContactsOpen(!allContactsOpen)}
-        >
-          <span className="font-semibold">All Contacts</span>
-          {allContactsOpen ? <FiChevronDown /> : <FiChevronRight />}
-        </div>
-        {allContactsOpen && (
-          <ul className="mb-6">
-            {availableContacts.map((u) => (
-              <li key={u.id}>
+          {acceptedContacts.map((u) => {
+            const outgoing = requests.some(
+              (r) =>
+                r.fromId === userId && r.toId === u.id && r.status === "pending"
+            );
+            const incoming = requests.some(
+              (r) =>
+                r.fromId === u.id && r.toId === userId && r.status === "pending"
+            );
+            return (
+              <li key={u.id} className="flex items-center">
                 <button
                   onClick={() => setSelectedUser(u)}
-                  className={`block w-full text-left px-3 py-2 mb-2 rounded transition ${
+                  className={`flex-1 text-left px-3 py-2 mb-2 rounded transition ${
                     selectedUser?.id === u.id
                       ? "bg-gray-700"
                       : "hover:bg-gray-700"
@@ -218,12 +195,58 @@ export default function ChatPage() {
                 >
                   {u.fullName}
                 </button>
+                {outgoing && <FiClock className="ml-1 mb-2 text-gray-300" />}
+                {incoming && <FiBell className="ml-1 mb-2 text-red-500" />}
               </li>
-            ))}
+            );
+          })}
+          {!acceptedContacts.length && (
+            <li className="text-sm text-gray-400">No contacts yet.</li>
+          )}
+        </ul>
+        {/* All contacts collapsible */}
+        <div
+          className="p-2 mb-2 rounded cursor-pointer flex justify-between items-center bg-gray-700"
+          onClick={() => setAllUsersOpen(!allUsersOpen)}
+        >
+          <span className="font-semibold">All Users</span>
+          {allUsersOpen ? <FiChevronDown /> : <FiChevronRight />}
+        </div>
+        {allUsersOpen && (
+          <ul className="mb-6">
+            {availableContacts.map((u) => {
+              const outgoing = requests.some(
+                (r) =>
+                  r.fromId === userId &&
+                  r.toId === u.id &&
+                  r.status === "pending"
+              );
+              const incoming = requests.some(
+                (r) =>
+                  r.fromId === u.id &&
+                  r.toId === userId &&
+                  r.status === "pending"
+              );
+              return (
+                <li key={u.id} className="flex items-center">
+                  <button
+                    onClick={() => setSelectedUser(u)}
+                    className={`flex-1 text-left px-3 py-2 mb-2 rounded transition ${
+                      selectedUser?.id === u.id
+                        ? "bg-gray-700"
+                        : "hover:bg-gray-700"
+                    }`}
+                  >
+                    {u.fullName}
+                  </button>
+                  {outgoing && <FiClock className="ml-1 mb-2 text-gray-300" />}
+                  {incoming && <FiBell className="ml-1 mb-2 text-red-500" />}
+                </li>
+              );
+            })}
           </ul>
         )}
-
-        {/* Logout under menu */}
+        {/* Logout */}
         <div className="absolute bottom-4 left-4">
           <button onClick={() => setShowLogoutMenu(!showLogoutMenu)}>
             <FiMoreVertical size={24} />
@@ -241,17 +264,13 @@ export default function ChatPage() {
           )}
         </div>
       </aside>
-
       {/* Chat area */}
       <div
-        className="flex-1 flex flex-col bg-cover bg-center ml-0 lg:ml-1/4"
-        style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1525186402429-7ee27cd56906?auto=format&fit=crop&w=1350&q=80')`,
-        }}
+        className="flex-1 flex flex-col bg-contain bg-center bg-black ml-0 lg:ml-1/4"
+        style={{ backgroundImage: `url('Chat_background.png')` }}
       >
         {/* Header */}
         <header className="flex items-center p-4 bg-black bg-opacity-50 text-white">
-          {/* Open button for mobile */}
           <div className="lg:hidden mr-2">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -264,52 +283,64 @@ export default function ChatPage() {
             {selectedUser?.fullName || "Select a contact"}
           </h2>
         </header>
-
-        {/* Main content */}
+        {/* Main */}
         <main className="flex-1 p-4 overflow-y-auto" ref={listRef}>
           {!selectedUser && (
-            <p className="text-center text-gray-300 mt-10">
+            <p className="text-sm font-bold text-black bg-neutral-400 p-1 px-2 rounded-2xl ">
               No contact selected.
             </p>
           )}
-
           {selectedUser && status !== "accepted" && (
-            <div className="mt-10 text-center space-y-2">
+            <div className="mt-10 text-center space-y-4">
               {status === undefined && (
-                <button
-                  onClick={sendRequest}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                >
-                  Send Chat Request
-                </button>
+                <>
+                  <p className="text-sm font-bold text-black bg-neutral-400 p-1 px-2 rounded-2xl ">
+                    Click below to send a chat request
+                  </p>
+                  <button
+                    onClick={sendRequest}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  >
+                    Send Chat Request
+                  </button>
+                </>
               )}
               {status === "pending" &&
                 (currentRequest.fromId === userId ? (
-                  <button
-                    onClick={cancelRequest}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                  >
-                    Cancel Request
-                  </button>
-                ) : (
-                  <div className="space-x-2">
-                    <button
-                      onClick={acceptRequest}
-                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                    >
-                      Accept
-                    </button>
+                  <div className="flex flex-col items-center justify-center gap-5">
+                    <p className="text-sm font-bold text-black bg-neutral-400 p-1 px-2 rounded-2xl ">
+                      Your chat request is pending approval
+                    </p>
                     <button
                       onClick={cancelRequest}
                       className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
                     >
-                      Decline
+                      Cancel Request
                     </button>
                   </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-100">
+                      This user has sent you a chat request
+                    </p>
+                    <div className="space-x-2 inline-flex">
+                      <button
+                        onClick={acceptRequest}
+                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={cancelRequest}
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </>
                 ))}
             </div>
           )}
-
           {status === "accepted" &&
             convo.map((msg) => {
               const mine = msg.fromId === userId;
@@ -336,8 +367,7 @@ export default function ChatPage() {
               );
             })}
         </main>
-
-        {/* Footer input */}
+        {/* Footer */}
         {status === "accepted" && (
           <footer className="flex items-center p-4 bg-black bg-opacity-50">
             <input
