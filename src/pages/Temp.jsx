@@ -1,0 +1,441 @@
+// import React, { useState, useEffect, useRef } from "react";
+// import axios from "axios";
+// import { useNavigate } from "react-router";
+// import {
+//   FiSend,
+//   FiMoreVertical,
+//   FiChevronDown,
+//   FiChevronRight,
+//   FiMenu,
+//   FiX,
+//   FiClock,
+//   FiBell,
+// } from "react-icons/fi";
+// import { ToastContainer, toast } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
+
+// // Endpoints
+// const USERS_API = "https://683878942c55e01d184d6bf0.mockapi.io/auth";
+// const MESSAGES_API = "https://683878942c55e01d184d6bf0.mockapi.io/messages";
+
+// export default function ChatPage() {
+//   const navigate = useNavigate();
+//   const isAuth = localStorage.getItem("isAuthenticated") === "true";
+//   const userId = localStorage.getItem("userId");
+//   const currentUserName = localStorage.getItem("fullName") || "";
+
+//   useEffect(() => {
+//     if (!isAuth || !userId) navigate("/login");
+//   }, [isAuth, userId, navigate]);
+
+//   const [allUsers, setAllUsers] = useState([]);
+//   const [selectedUser, setSelectedUser] = useState(null);
+//   const [entries, setEntries] = useState([]);
+//   const [draft, setDraft] = useState("");
+//   const [sidebarOpen, setSidebarOpen] = useState(true);
+//   const [allUsersOpen, setAllUsersOpen] = useState(false);
+//   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
+//   const listRef = useRef(null);
+
+//   // Fetch users
+//   useEffect(() => {
+//     axios
+//       .get(USERS_API)
+//       .then((res) => {
+//         const others = res.data.filter((u) => u.id !== userId);
+//         setAllUsers(others);
+//         if (!selectedUser && others.length) setSelectedUser(others[0]);
+//       })
+//       .catch(console.error);
+//   }, [userId]);
+
+//   // Fetch entries repeatedly
+//   const fetchEntries = () => {
+//     axios
+//       .get(MESSAGES_API)
+//       .then((res) => setEntries(res.data))
+//       .catch(console.error);
+//   };
+//   useEffect(() => {
+//     fetchEntries();
+//     const id = setInterval(fetchEntries, 5000);
+//     return () => clearInterval(id);
+//   }, []);
+
+//   const requests = entries.filter((e) => e.type === "request");
+//   const chats = entries.filter(
+//     (e) => e.type === "chat" && e.status === "accepted"
+//   );
+
+//   const currentRequest = requests.find(
+//     (r) =>
+//       (r.fromId === userId && r.toId === selectedUser?.id) ||
+//       (r.fromId === selectedUser?.id && r.toId === userId)
+//   );
+//   const status = currentRequest?.status;
+
+//   const acceptedIds = requests
+//     .filter(
+//       (r) =>
+//         r.status === "accepted" && (r.fromId === userId || r.toId === userId)
+//     )
+//     .map((r) => (r.fromId === userId ? r.toId : r.fromId));
+//   const acceptedContacts = allUsers.filter((u) => acceptedIds.includes(u.id));
+//   const availableContacts = allUsers.filter((u) => !acceptedIds.includes(u.id));
+
+//   const convo = chats
+//     .filter(
+//       (m) =>
+//         (m.fromId === userId && m.toId === selectedUser?.id) ||
+//         (m.fromId === selectedUser?.id && m.toId === userId)
+//     )
+//     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+//   // Actions
+//   const sendRequest = () => {
+//     if (!selectedUser) return;
+//     axios
+//       .post(MESSAGES_API, {
+//         fromId: userId,
+//         toId: selectedUser.id,
+//         type: "request",
+//         status: "pending",
+//         createdAt: new Date().toISOString(),
+//       })
+//       .then(() => {
+//         toast.success("Chat request sent");
+//         fetchEntries();
+//       })
+//       .catch(console.error);
+//   };
+//   const acceptRequest = () => {
+//     if (!currentRequest) return;
+//     axios
+//       .put(`${MESSAGES_API}/${currentRequest.id}`, {
+//         ...currentRequest,
+//         status: "accepted",
+//       })
+//       .then(() => {
+//         toast.success("Chat request accepted");
+//         fetchEntries();
+//       })
+//       .catch(console.error);
+//   };
+//   const cancelRequest = () => {
+//     if (!currentRequest) return;
+//     axios
+//       .delete(`${MESSAGES_API}/${currentRequest.id}`)
+//       .then(() => {
+//         toast.info("Chat request cancelled");
+//         fetchEntries();
+//       })
+//       .catch(console.error);
+//   };
+//   const sendMessage = () => {
+//     if (!draft.trim() || status !== "accepted") return;
+//     axios
+//       .post(MESSAGES_API, {
+//         fromId: userId,
+//         toId: selectedUser.id,
+//         type: "chat",
+//         status: "accepted",
+//         text: draft.trim(),
+//         createdAt: new Date().toISOString(),
+//       })
+//       .then(() => {
+//         setDraft("");
+//         toast.success("Message sent");
+//         fetchEntries();
+//       })
+//       .catch(console.error);
+//   };
+
+//   // Logout confirmation
+//   const handleLogout = () => {
+//     toast.info(
+//       <div className="flex flex-col">
+//         <span className="text-white">Are you sure you want to log out?</span>
+//         <div className="mt-2 flex justify-end space-x-2">
+//           <button
+//             className="px-3 py-1 border-2 border-white text-white rounded-full hover:bg-white hover:text-purple-600 transition ring-2 ring-white"
+//             onClick={() => toast.dismiss()}
+//           >
+//             Cancel
+//           </button>
+//           <button
+//             className="px-3 py-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition ring-2 ring-red-800"
+//             onClick={() => {
+//               toast.dismiss();
+//               toast.info("Logged out");
+//               setTimeout(() => {
+//                 localStorage.clear();
+//                 navigate("/login");
+//               }, 500);
+//             }}
+//           >
+//             Confirm
+//           </button>
+//         </div>
+//       </div>,
+//       {
+//         position: "top-center",
+//         autoClose: false,
+//         closeOnClick: false,
+//         closeButton: false,
+//         draggable: false,
+//       }
+//     );
+//   };
+
+//   // Auto-scroll
+//   useEffect(() => {
+//     if (listRef.current) {
+//       listRef.current.scrollTop = listRef.current.scrollHeight;
+//     }
+//   }, [convo]);
+
+//   return (
+//     <>
+//       <ToastContainer position="top-center" />
+//       <div className="h-screen flex bg-gradient-to-tr from-purple-600 via-pink-500 to-red-400">
+//         {/* Sidebar */}
+//         <aside
+//           className={`text-white p-4 overflow-y-auto z-20 transform transition-transform ${
+//             sidebarOpen ? "translate-x-0" : "-translate-x-full"
+//           } fixed inset-y-0 left-0 w-full h-full lg:relative lg:w-1/4 lg:h-auto bg-purple-900`}
+//         >
+//           <div className="lg:hidden flex justify-end">
+//             <button
+//               onClick={() => setSidebarOpen(false)}
+//               className="p-2 text-white"
+//             >
+//               <FiX size={24} />
+//             </button>
+//           </div>
+
+//           <div className="p-2 mb-2 rounded bg-purple-800">
+//             <h3 className="font-semibold">Contacts</h3>
+//           </div>
+//           <ul className="mb-6">
+//             {acceptedContacts.map((u) => {
+//               const outgoing = requests.some(
+//                 (r) =>
+//                   r.fromId === userId &&
+//                   r.toId === u.id &&
+//                   r.status === "pending"
+//               );
+//               const incoming = requests.some(
+//                 (r) =>
+//                   r.fromId === u.id &&
+//                   r.toId === userId &&
+//                   r.status === "pending"
+//               );
+//               return (
+//                 <li key={u.id} className="flex items-center">
+//                   <button
+//                     onClick={() => setSelectedUser(u)}
+//                     className={`flex-1 text-left px-3 py-2 mb-2 rounded transition ${
+//                       selectedUser?.id === u.id
+//                         ? "bg-purple-700"
+//                         : "hover:bg-purple-800"
+//                     }`}
+//                   >
+//                     {u.fullName}
+//                   </button>
+//                   {outgoing && <FiClock className="ml-1 mb-2 text-pink-300" />}
+//                   {incoming && <FiBell className="ml-1 mb-2 text-red-400" />}
+//                 </li>
+//               );
+//             })}
+//             {!acceptedContacts.length && (
+//               <li className="text-sm text-pink-200">No contacts yet.</li>
+//             )}
+//           </ul>
+
+//           <div
+//             className="p-2 mb-2 rounded cursor-pointer flex justify-between items-center bg-purple-800"
+//             onClick={() => setAllUsersOpen(!allUsersOpen)}
+//           >
+//             <span className="font-semibold">All Users</span>
+//             {allUsersOpen ? <FiChevronDown /> : <FiChevronRight />}
+//           </div>
+//           {allUsersOpen && (
+//             <ul className="mb-6">
+//               {availableContacts.map((u) => {
+//                 const outgoing = requests.some(
+//                   (r) =>
+//                     r.fromId === userId &&
+//                     r.toId === u.id &&
+//                     r.status === "pending"
+//                 );
+//                 const incoming = requests.some(
+//                   (r) =>
+//                     r.fromId === u.id &&
+//                     r.toId === userId &&
+//                     r.status === "pending"
+//                 );
+//                 return (
+//                   <li key={u.id} className="flex items-center">
+//                     <button
+//                       onClick={() => setSelectedUser(u)}
+//                       className={`flex-1 text-left px-3 py-2 mb-2 rounded transition ${
+//                         selectedUser?.id === u.id
+//                           ? "bg-purple-700"
+//                           : "hover:bg-purple-800"
+//                       }`}
+//                     >
+//                       {u.fullName}
+//                     </button>
+//                     {outgoing && (
+//                       <FiClock className="ml-1 mb-2 text-pink-300" />
+//                     )}
+//                     {incoming && <FiBell className="ml-1 mb-2 text-red-400" />}
+//                   </li>
+//                 );
+//               })}
+//             </ul>
+//           )}
+//         </aside>
+
+//         {/* Chat area */}
+//         <div className="flex-1 flex flex-col ml-0 lg:ml-1/4">
+//           <header className="flex items-center p-4 bg-black bg-opacity-50 text-white">
+//             <div className="lg:hidden mr-2">
+//               <button
+//                 onClick={() => setSidebarOpen(true)}
+//                 className="p-2 text-white"
+//               >
+//                 <FiMenu size={24} />
+//               </button>
+//             </div>
+//             <h2 className="flex-1 text-lg font-medium">
+//               {selectedUser?.fullName || "Select a contact"}
+//             </h2>
+//             <div className="relative">
+//               <button
+//                 onClick={() => setShowHeaderMenu(!showHeaderMenu)}
+//                 className="p-2 text-white"
+//               >
+//                 <FiMoreVertical size={24} />
+//               </button>
+//               {showHeaderMenu && (
+//                 <div className="absolute right-0 mt-2 w-40 bg-purple-900 rounded shadow-lg z-10">
+//                   <button
+//                     onClick={handleLogout}
+//                     className="block w-full text-left px-3 py-2 hover:bg-red-700 text-white"
+//                   >
+//                     Logout
+//                   </button>
+//                 </div>
+//               )}
+//             </div>
+//           </header>
+
+//           <main className="flex-1 p-4 overflow-y-auto" ref={listRef}>
+//             {!selectedUser && (
+//               <p className="text-sm font-bold text-pink-200 bg-purple-700 p-1 px-2 rounded-2xl">
+//                 No contact selected.
+//               </p>
+//             )}
+
+//             {selectedUser && status !== "accepted" && (
+//               <div className="mt-10 text-center space-y-4">
+//                 {status === undefined && (
+//                   <>
+//                     <p className="text-sm font-bold text-white bg-purple-800 p-1 px-2 rounded-2xl">
+//                       Click below to send a chat request
+//                     </p>
+//                     <button
+//                       onClick={sendRequest}
+//                       className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition ring-2 ring-pink-800"
+//                     >
+//                       Send Chat Request
+//                     </button>
+//                   </>
+//                 )}
+//                 {status === "pending" &&
+//                   (currentRequest.fromId === userId ? (
+//                     <>
+//                       <p className="text-sm font-bold text-white bg-purple-800 p-1 px-2 rounded-2xl">
+//                         Your chat request is pending
+//                       </p>
+//                       <button
+//                         onClick={cancelRequest}
+//                         className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition ring-2 ring-red-800"
+//                       >
+//                         Cancel Request
+//                       </button>
+//                     </>
+//                   ) : (
+//                     <>
+//                       <p className="text-sm font-bold text-white bg-purple-800 p-1 px-2 rounded-2xl">
+//                         This user has sent you a chat request
+//                       </p>
+//                       <div className="inline-flex space-x-2">
+//                         <button
+//                           onClick={acceptRequest}
+//                           className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition ring-2 ring-pink-800"
+//                         >
+//                           Accept
+//                         </button>
+//                         <button
+//                           onClick={cancelRequest}
+//                           className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition ring-2 ring-red-800"
+//                         >
+//                           Decline
+//                         </button>
+//                       </div>
+//                     </>
+//                   ))}
+//               </div>
+//             )}
+
+//             {status === "accepted" &&
+//               convo.map((msg) => {
+//                 const mine = msg.fromId === userId;
+//                 return (
+//                   <div
+//                     key={msg.id}
+//                     className={`flex flex-col ${
+//                       mine ? "items-end" : "items-start"
+//                     }`}
+//                   >
+//                     <span className="text-xs font-semibold text-white mb-1 bg-purple-800 p-0.5 px-2 rounded-xl">
+//                       {mine ? currentUserName : selectedUser.fullName}
+//                     </span>
+//                     <div
+//                       className={`max-w-[70%] px-4 py-2 mb-4 rounded-lg break-words ${
+//                         mine
+//                           ? "bg-pink-400 text-white"
+//                           : "bg-purple-700 text-white"
+//                       }`}
+//                     >
+//                       {msg.text}
+//                     </div>
+//                   </div>
+//                 );
+//               })}
+//           </main>
+
+//           {status === "accepted" && (
+//             <footer className="flex items-center p-4 bg-black bg-opacity-50">
+//               <input
+//                 className="flex-1 rounded-full px-4 py-2 mr-2 bg-white bg-opacity-80 placeholder-purple-600 focus:outline-none"
+//                 placeholder="Type a message…"
+//                 value={draft}
+//                 onChange={(e) => setDraft(e.target.value)}
+//                 onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+//               />
+//               <button
+//                 onClick={sendMessage}
+//                 className="p-3 bg-pink-600 rounded-full text-white hover:bg-pink-700 transition ring-2 ring-pink-800"
+//               >
+//                 <FiSend size={20} />
+//               </button>
+//             </footer>
+//           )}
+//         </div>
+//       </div>
+//     </>
+//   );
+// }
