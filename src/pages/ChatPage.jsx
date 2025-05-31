@@ -149,10 +149,10 @@ export default function ChatPage() {
   const handleLogout = () => {
     toast.info(
       <div className="flex flex-col">
-        <span className="text-white">Log out?</span>
+        <span className="text-black font-semibold">Log out?</span>
         <div className="mt-2 flex justify-end space-x-2">
           <button
-            className="px-3 py-1 border-2 border-white text-white rounded-full hover:bg-white hover:text-purple-600 ring-2 ring-white"
+            className="px-3 py-0.5 border-2 bg-purple-600 border-purple-700  text-white rounded-full hover:bg-purple-500 hover:scale-102  ring-white"
             onClick={() => toast.dismiss()}
           >
             Cancel
