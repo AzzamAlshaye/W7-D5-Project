@@ -152,7 +152,7 @@ export default function ChatPage() {
         <span className="text-black font-semibold">Log out?</span>
         <div className="mt-2 flex justify-end space-x-2">
           <button
-            className="px-3 py-0.5 border-2 bg-purple-600 border-purple-700  text-white rounded-full hover:bg-purple-500 hover:scale-102  ring-white"
+            className="px-3 py-0.5 border-2 bg-purple-600 border-purple-700 text-white rounded-full hover:bg-purple-500 hover:scale-102 ring-white"
             onClick={() => toast.dismiss()}
           >
             Cancel
@@ -389,7 +389,7 @@ export default function ChatPage() {
             )}
 
             {selectedUser && status !== "accepted" && (
-              <div className="mt-10 text-center space-y-4  flex flex-col justify-center items-center">
+              <div className="mt-10 text-center space-y-4 flex flex-col justify-center items-center">
                 {status === undefined && (
                   <>
                     <p className="text-sm font-bold text-white bg-purple-800 p-1 px-2 rounded-2xl">
@@ -443,6 +443,15 @@ export default function ChatPage() {
             {status === "accepted" &&
               convo.map((msg) => {
                 const mine = msg.fromId === userId;
+                // Format the timestamp as HH:MM (24-hour; based on locale)
+                const timeLabel = new Date(msg.createdAt).toLocaleTimeString(
+                  [],
+                  {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }
+                );
+
                 return (
                   <div
                     key={msg.id}
@@ -450,18 +459,24 @@ export default function ChatPage() {
                       mine ? "items-end" : "items-start"
                     }`}
                   >
-                    <span className="text-xs font-semibold text-white mb-1 bg-purple-800 p-0.5 px-2 rounded-xl ">
+                    {/* Sender name + time */}
+                    <span className="text-xs font-semibold text-white mb-1 bg-purple-800 p-0.5 px-2 rounded-xl flex items-center">
                       {mine ? currentUserName : selectedUser.fullName}
                     </span>
+
+                    {/* Message bubble */}
                     <div
-                      className={`max-w-[70%] px-4 py-2 mb-4 rounded-lg break-words ${
+                      className={`max-w-[70%] px-4 py-2  rounded-lg break-words ${
                         mine
-                          ? "bg-pink-700  border border-pink-900 text-white"
+                          ? "bg-pink-700 border border-pink-900 text-white"
                           : "bg-purple-700 border border-purple-900 text-white"
                       }`}
                     >
                       {msg.text}
                     </div>
+                    <span className="ml-2 text-[10px] text-gray-300">
+                      {timeLabel}
+                    </span>
                   </div>
                 );
               })}
