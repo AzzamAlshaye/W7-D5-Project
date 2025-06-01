@@ -24,8 +24,11 @@ export default function ChatPage() {
   const userId = localStorage.getItem("userId");
   const currentUserName = localStorage.getItem("fullName") || "";
 
+  // Redirect if not authenticated
   useEffect(() => {
-    if (!isAuth || !userId) navigate("/login");
+    if (!isAuth || !userId) {
+      navigate("/login");
+    }
   }, [isAuth, userId, navigate]);
 
   const [allUsers, setAllUsers] = useState([]);
@@ -35,8 +38,17 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [allUsersOpen, setAllUsersOpen] = useState(false);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
-  const [bgType, setBgType] = useState("gray");
+
+  // 1. Initialize bgType from localStorage (fallback to "gray")
+  const [bgType, setBgType] = useState(
+    localStorage.getItem("bgType") || "gray"
+  );
   const listRef = useRef(null);
+
+  // Whenever bgType changes, persist it to localStorage
+  useEffect(() => {
+    localStorage.setItem("bgType", bgType);
+  }, [bgType]);
 
   // Fetch users
   useEffect(() => {
@@ -45,12 +57,14 @@ export default function ChatPage() {
       .then((res) => {
         const others = res.data.filter((u) => u.id !== userId);
         setAllUsers(others);
-        if (!selectedUser && others.length) setSelectedUser(others[0]);
+        if (!selectedUser && others.length) {
+          setSelectedUser(others[0]);
+        }
       })
       .catch(console.error);
   }, [userId]);
 
-  // Fetch messages
+  // Fetch messages periodically
   const fetchEntries = () => {
     axios
       .get(MESSAGES_API)
@@ -81,6 +95,7 @@ export default function ChatPage() {
         r.status === "accepted" && (r.fromId === userId || r.toId === userId)
     )
     .map((r) => (r.fromId === userId ? r.toId : r.fromId));
+
   const acceptedContacts = allUsers.filter((u) => acceptedIds.includes(u.id));
   const availableContacts = allUsers.filter((u) => !acceptedIds.includes(u.id));
 
@@ -108,6 +123,7 @@ export default function ChatPage() {
         fetchEntries();
       });
   };
+
   const acceptRequest = () => {
     if (!currentRequest) return;
     axios
@@ -120,6 +136,7 @@ export default function ChatPage() {
         fetchEntries();
       });
   };
+
   const cancelRequest = () => {
     if (!currentRequest) return;
     axios.delete(`${MESSAGES_API}/${currentRequest.id}`).then(() => {
@@ -127,6 +144,7 @@ export default function ChatPage() {
       fetchEntries();
     });
   };
+
   const sendMessage = () => {
     if (!draft.trim() || status !== "accepted") return;
     axios
@@ -182,7 +200,7 @@ export default function ChatPage() {
     );
   };
 
-  // Auto scroll
+  // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     if (listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
@@ -380,10 +398,10 @@ export default function ChatPage() {
             </div>
           </header>
 
-          {/* Main */}
+          {/* Main chat area */}
           <main className="flex-1 p-4 overflow-y-auto" ref={listRef}>
             {!selectedUser && (
-              <p className="text-sm font-bold text-pink-200 bg-purple-700 p-1 px-2 rounded-2xl ">
+              <p className="text-sm font-bold text-pink-200 bg-purple-700 p-1 px-2 rounded-2xl">
                 No contact selected.
               </p>
             )}
@@ -443,7 +461,7 @@ export default function ChatPage() {
             {status === "accepted" &&
               convo.map((msg) => {
                 const mine = msg.fromId === userId;
-                // Format the timestamp as HH:MM (24-hour; based on locale)
+                // Format timestamp as HH:MM (24-hour)
                 const timeLabel = new Date(msg.createdAt).toLocaleTimeString(
                   [],
                   {
@@ -466,7 +484,7 @@ export default function ChatPage() {
 
                     {/* Message bubble */}
                     <div
-                      className={`max-w-[70%] px-4 py-2  rounded-lg break-words ${
+                      className={`max-w-[70%] px-4 py-2 rounded-lg break-words ${
                         mine
                           ? "bg-pink-700 border border-pink-900 text-white"
                           : "bg-purple-700 border border-purple-900 text-white"
@@ -482,7 +500,7 @@ export default function ChatPage() {
               })}
           </main>
 
-          {/* Footer */}
+          {/* Footer: input + send button */}
           {status === "accepted" && (
             <footer className="flex items-center p-4 bg-black bg-opacity-50">
               <input
